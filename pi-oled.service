@@ -1,0 +1,11 @@
+[Unit]
+Description=RaspberryPi Oled Stats
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /etc/pi-oled/pi-oled.py
+Environment=PYTHONUNBUFFERED=1
+Type=simple
+ 
+[Install]
+WantedBy=default.target

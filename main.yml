@@ -1,0 +1,108 @@
+---
+  - name: RaspberryPi-OLED install
+    hosts: raspberries
+    tasks:
+      - name: Install apt dependencies (may take a while)
+        become: yes
+        apt:
+          name:
+            - 'build-essential'
+            - 'git'
+            - 'python-dev'
+            - 'python3'
+            - 'python3-dev'
+            - 'python3-apt'
+            - 'python3-pip'
+            - 'python3-pil'
+            - 'python3-setuptools'
+            - 'python-smbus'
+            - 'python3-smbus'
+            - 'i2c-tools'
+            - 'libi2c-dev'
+          state: latest
+          update_cache: True
+        register: dependencies
+
+      - name: Updating /etc/modules
+        become: yes
+        blockinfile:
+          path: /etc/modules
+          block: |
+            i2c-dev
+            i2c-bcm2708
+        register: modules
+
+      - name: Updating /boot/config.txt
+        become: yes
+        blockinfile:
+          path: /boot/config.txt
+          block: |
+            dtparam=i2c_arm=on
+            dtparam=i2c1=on
+        register: boot_config
+
+      - name: Install required pip packages
+        become: yes
+        pip:
+          name:
+            - adafruit-circuitpython-ssd1306
+            - adafruit-ssd1306
+            - adafruit-blinka
+            - RPI.GPIO
+          executable: pip3
+
+      - name: Upgrading pip
+        become: yes
+        raw: pip3 install --upgrade setuptools
+
+      - name: Cloning Adafruit_Python_GPIO
+        git:
+          repo: https://github.com/adafruit/Adafruit_Python_GPIO.git
+          dest: /tmp/Adafruit_Python_GPIO
+
+      - name: Installing Adafruit_Python_GPIO library
+        become: yes
+        raw: cd /tmp/Adafruit_Python_GPIO/ && python3 setup.py install
+      
+      - name: Ensure pi-oled dir exists
+        become: yes
+        file:
+          path: /etc/pi-oled/
+          recurse: yes
+          state: directory
+
+
+      - name: Copy display script
+        become: yes
+        copy:
+          src: ./pi-oled.py
+          dest: /etc/pi-oled/pi-oled.py
+
+      - name: Copy display service
+        become: yes
+        copy: 
+          src: ./pi-oled.service
+          dest: /lib/systemd/system/pi-oled.service
+        register: copy_service
+
+      - name: Enabling service
+        become: yes
+        systemd:
+          name: pi-oled.service
+          enabled: yes
+          masked: no
+          daemon_reload: yes
+        register: enable_service
+
+      - name: Rebooting to apply changes
+        become: yes
+        reboot:
+        when: boot_config is changed or modules is changed
+
+      - name: Starting service
+        become: yes
+        systemd:
+          name: pi-oled.service
+          state: started
+          masked: no
+        when: copy_service is changed and not (boot_config is changed or modules is changed)
