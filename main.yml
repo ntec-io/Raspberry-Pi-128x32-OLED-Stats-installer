@@ -71,7 +71,6 @@
           recurse: yes
           state: directory
 
-
       - name: Copy display script
         become: yes
         copy:

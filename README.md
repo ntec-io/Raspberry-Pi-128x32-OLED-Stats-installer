@@ -1,4 +1,4 @@
-# Raspberry Pi 128x64 OLED Stats installer
+# Raspberry Pi 128x32 OLED Stats installer
 
 ## What it does
 This ansible playbook installs all neccessary dependencies and configurations for using an OLED. It also copies all neccessary scripts and files to the raspberries and creates and enables a systemd service called `pi-oled`.
@@ -12,4 +12,4 @@ This ansible playbook installs all neccessary dependencies and configurations fo
 ## Manual control
 Disable automatic start: `sudo systemctl pi-oled disable` (on every raspberry)
 
-Stop service:`sudo systemctl pi-oled stop`
+Stop service: `sudo systemctl pi-oled stop`
